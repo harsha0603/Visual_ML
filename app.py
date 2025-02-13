@@ -1,20 +1,30 @@
-from flask import Flask, render_template
-import dash
-from dash import dcc, html
+from dash import Dash, dcc, html, Input, Output
+from visual import generate_decision_boundary 
 
+app = Dash(__name__)
+server = app.server
 
-app = Flask(__name__)
+app.layout = html.Div([
+    html.H1("ML Model Decision Boundary Visualizer"),
+    
+    dcc.Dropdown(
+        id="model-dropdown",
+        options=[{"label": key, "value": key} for key in ["SVM", "Decision Tree", "KNN"]],
+        value="SVM"
+    ),
 
-dash_app = dash.Dash(__name__, server=app, url_base_pathname="/dash/")
+    dcc.Slider(id="param-slider", min=1, max=10, step=1, value=2, marks={i: str(i) for i in range(1, 11)}),
 
-dash_app.layout = html.Div([
-    html.H1("Ml model visualizer"),
-    dcc.Graph(id="grph-layout")
+    dcc.Graph(id="decision-boundary")
 ])
 
-@app.route("/")
-def home():
-    return render_template("index.html")
+@app.callback(
+    Output("decision-boundary", "figure"),
+    [Input("model-dropdown", "value"),
+     Input("param-slider", "value")]
+)
+def update_graph(model_name, param_value):
+    return generate_decision_boundary(model_name, param_value)
 
-if __name__ == "__main__":
-    app.run(debug=True)
+if __name__ == '__main__':
+    app.run_server(debug=True)
