@@ -11,3 +11,4 @@ model.fit(X.reshape(-1, 1),y)
 
 X_range = np.linspace(X.min(), X.max(), 100)
 y_pred = model.predict(X_range.reshape(-1,1))
+
