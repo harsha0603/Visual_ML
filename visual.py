@@ -1,70 +1,63 @@
-from sklearn.datasets import make_classification
-from sklearn.svm import SVC
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.neighbors import KNeighborsClassifier
 import numpy as np
 import plotly.graph_objects as go
+from sklearn.linear_model import LinearRegression
+from sklearn.datasets import make_regression
 
-# Generate classification dataset
-X, y = make_classification(n_samples=200, n_features=2, n_informative=2, 
-                           n_redundant=0, n_classes=2, random_state=42)
+# Generate sample regression data
+X, y = make_regression(n_samples=100, n_features=1, noise=15, random_state=42)
+X = X.flatten()  # Convert to 1D array
 
-# Dictionary of models
-models = {
-    "SVM": SVC,
-    "Decision Tree": DecisionTreeClassifier,
-    "KNN": KNeighborsClassifier
-}
+# Train a simple linear regression model
+model = LinearRegression()
+model.fit(X.reshape(-1, 1), y)
 
-def generate_decision_boundary(model_name, param_value):
-    """
-    Generate decision boundary visualization for the selected model.
-    
-    Args:
-        model_name (str): Model to use ('SVM', 'Decision Tree', or 'KNN').
-        param_value (int or float): Parameter for the model.
-    
-    Returns:
-        fig (plotly.graph_objects.Figure): Interactive decision boundary plot.
-    """
-    
-    # Dictionary for dynamic parameter assignment
-    params = {}
-    if model_name == "SVM":
-        params["C"] = param_value
-    elif model_name == "Decision Tree":
-        params["max_depth"] = param_value
-    elif model_name == "KNN":
-        params["n_neighbors"] = param_value
+# Generate predictions for visualization
+X_range = np.linspace(X.min(), X.max(), 100)
+y_pred_final = model.predict(X_range.reshape(-1, 1))
 
-    # Initialize and train model
-    model = models[model_name](**params)
-    model.fit(X, y)
-
-    # Create meshgrid
-    xx, yy = np.meshgrid(
-        np.linspace(X[:, 0].min() - 1, X[:, 0].max() + 1, 100),
-        np.linspace(X[:, 1].min() - 1, X[:, 1].max() + 1, 100)
-    )
-
-    # Predict on grid
-    Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
-    Z = Z.reshape(xx.shape)
-
-    # Create figure
-    fig = go.Figure()
-
-    # Add contour plot (Decision boundary)
-    fig.add_trace(go.Contour(
-        x=xx[0], y=yy[:, 0], z=Z,
-        colorscale='Viridis', opacity=0.7, showscale=False
+# Create frames for animation
+frames = []
+steps = np.linspace(0, 1, 50)  # More steps for smoother transition
+for step in steps:
+    y_pred_step = (1 - step) * np.mean(y) + step * y_pred_final  # Move line gradually
+    frames.append(go.Frame(
+        data=[
+            go.Scatter(x=X, y=y, mode="markers", marker=dict(size=8, color="black"), name="Data Points"),
+            go.Scatter(x=X_range, y=y_pred_step, mode="lines", line=dict(color="blue", width=2), name="Regression Line")
+        ],
+        name=str(step)
     ))
 
-    # Add scatter plot (Data points)
-    fig.add_trace(go.Scatter(
-        x=X[:, 0], y=X[:, 1],
-        mode='markers',
-        marker=dict(color=y, colorscale='Jet', size=10)
-    ))
+# Create initial scatter plot
+fig = go.Figure(
+    data=[
+        go.Scatter(x=X, y=y, mode="markers", marker=dict(size=8, color="black"), name="Data Points"),
+        go.Scatter(x=X_range, y=np.full_like(X_range, np.mean(y)), mode="lines", line=dict(color="blue", width=2), name="Regression Line")
+    ],
+    frames=frames
+)
 
-    return fig
+# Add animation settings (slower speed)
+fig.update_layout(
+    title="Linear Regression Line Fitting",
+    xaxis_title="X",
+    yaxis_title="Y",
+    updatemenus=[{
+        "buttons": [
+            {"args": [None, {"frame": {"duration": 300, "redraw": True}, "fromcurrent": True}],
+             "label": "Play", "method": "animate"},
+            {"args": [[None], {"frame": {"duration": 0, "redraw": True}, "mode": "immediate", "transition": {"duration": 0}}],
+             "label": "Pause", "method": "animate"}
+        ],
+        "direction": "left",
+        "pad": {"r": 10, "t": 87},
+        "showactive": False,
+        "type": "buttons",
+        "x": 0.1,
+        "xanchor": "right",
+        "y": 0,
+        "yanchor": "top"
+    }]
+)
+
+fig.show()
