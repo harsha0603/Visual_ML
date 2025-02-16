@@ -19,7 +19,7 @@ y_pred_final = model.predict(X_range.reshape(-1, 1))
 frames = []
 steps = np.linspace(0, 1, 50)  # More steps for smoother transition
 for step in steps:
-    y_pred_step = (1 - step) * np.mean(y) + step * y_pred_final  # Move line gradually
+    y_pred_step = (1 - step) * np.mean(y) + step * y_pred_final  
     frames.append(go.Frame(
         data=[
             go.Scatter(x=X, y=y, mode="markers", marker=dict(size=8, color="black"), name="Data Points"),
@@ -44,7 +44,7 @@ fig.update_layout(
     yaxis_title="Y",
     updatemenus=[{
         "buttons": [
-            {"args": [None, {"frame": {"duration": 300, "redraw": True}, "fromcurrent": True}],
+            {"args": [None, {"frame": {"duration": 200, "redraw": True}, "fromcurrent": True}],
              "label": "Play", "method": "animate"},
             {"args": [[None], {"frame": {"duration": 0, "redraw": True}, "mode": "immediate", "transition": {"duration": 0}}],
              "label": "Pause", "method": "animate"}
